@@ -18,16 +18,16 @@ class MyWindow(QtGui.QMainWindow):
         self.colOp = None
 
         # T E M P O R A R Y READ FROM FILE
-        self.df =  pd.read_csv("inc.txt", comment='#', header=0, sep='\t')
-        self.widget = DataFrameWidget(self.df)
-        self.setCentralWidget(self.widget)
-        self.colOp = columnOperations(self.df)
+        # self.df =  pd.read_csv("INCOME.csv", comment='#', header=0, sep='\t')
+        # self.widget = DataFrameWidget(self.df)
+        # self.setCentralWidget(self.widget)
+        # self.colOp = columnOperations(self.df)
         # T E M P O R A R Y READ FROM FILE
 
         openFile = QtGui.QAction(QtGui.QIcon('open.png'), 'Wczytaj dane', self)
         openFile.setShortcut('Ctrl+O')
         openFile.setStatusTip('Open new File')
-        openFile.triggered.connect(self.showDialogHeadline)
+        openFile.triggered.connect(self.showDialogFile)
 
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&Plik')
@@ -49,6 +49,26 @@ class MyWindow(QtGui.QMainWindow):
         columnMenu.addAction(textToNumber)
         columnMenu.addAction(discretize)
         columnMenu.addAction(normalize)
+
+        scatterPlot = QtGui.QAction('Wykres rozproszen dwuwymiarowy', self)
+        scatterPlot.setShortcut('Ctrl+R')
+        scatterPlot.triggered.connect(self.showDialogScatterPlotPlot)
+
+        plotMenu = menubar.addMenu('&Wykres')
+        plotMenu.addAction(scatterPlot)
+
+        euclid = QtGui.QAction('odleglosc Euklidesowa', self)
+        manhattan = QtGui.QAction('metryka Manhattan', self)
+        nieskonczonosc = QtGui.QAction('nieskonczonosc', self)
+        Mahalanobis = QtGui.QAction('Mahalanobisa', self)
+
+        knnMenu = menubar.addMenu('&Klasyfikacja metoda k-nn')
+        knnMenu.addAction(euclid)
+        knnMenu.addAction(manhattan)
+        knnMenu.addAction(nieskonczonosc)
+        knnMenu.addAction(Mahalanobis)
+
+
 
         #
         # btn = QtGui.QPushButton('wczytaj dane', self)
@@ -83,11 +103,11 @@ class MyWindow(QtGui.QMainWindow):
                                                   'Text files (*.txt);;CSV files (*.csv)')
         f = open(fname, 'r')
         with f:
-            self.df = pd.read_csv(f, comment='#', header=self.h, sep='\t')
+            self.df = pd.read_csv(f, comment='#', header = 0, sep='\t')
             self.colOp = columnOperations(self.df)
         # print df[0:10]
-        widget = DataFrameWidget(self.df)
-        self.setCentralWidget(widget)
+        self.widget = DataFrameWidget(self.df)
+        self.setCentralWidget(self.widget)
 
 
     def showDialogTextToNumber(self):
@@ -108,4 +128,7 @@ class MyWindow(QtGui.QMainWindow):
             self.df = self.colOp.getDataFrame()
             self.widget.setDataFrame(self.df)
 
+    def showDialogScatterPlotPlot(self):
+        if self.colOp is not None:
+            self.colOp.showDialogScatterPlotPlot()
 

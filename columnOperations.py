@@ -3,13 +3,12 @@ __author__ = 'Milena'
 import sys
 from PyQt4 import QtGui
 import pandas as pd
-
+import matplotlib.pyplot as plt
 
 class columnOperations(QtGui.QWidget):
 
     def __init__(self, dataFrame):
         super(columnOperations, self).__init__()
-        self.x = 0
 
         self.df = dataFrame
         # self.initUI()
@@ -61,19 +60,33 @@ class columnOperations(QtGui.QWidget):
             print "wybrana kolumna " + selectedColumn
             self.normalize(selectedColumn)
 
+    def showDialogScatterPlotPlot(self):
+        axisx, ok = QtGui.QInputDialog.getItem(self, "Os X",
+                "Wybierz kolumne dla osi x", self.df.columns, 0, False)
+
+        if axisx and ok:
+            axisy, ok2 = QtGui.QInputDialog.getItem(self, "Os Y",
+                "Wybierz kolumne dla osi y", self.df.columns, 0, False)
+            if axisy and ok2:
+                print "teraz wysuje wykres"
+                pd.options.display.mpl_style = 'default'
+                self.df.plot(kind='scatter', x=str(axisx), y=str(axisy), c=self.textToNumber('Hrabstwo'), s=100);
+
     def discretize(self, selectedColumn, range):
         l = []
-        count = 1
-        while (count <= range):
-            l.append("grupa " + str(count))
+        count = 0
+        while (count <= range-1):
+            l.append(count)
             count += 1
 
         if range == 0:
-            l.append("grupa 1")
+            l.append(0)
 
         try:
-            discretized = pd.cut(self.df['Aktywa'], range, labels=l)
-            self.df['zdyskretyz. '+str(selectedColumn)] = discretized
+            discretized = pd.cut(self.df[str(selectedColumn)], range, labels=l)
+            self.df['dyskr. przedz: '+ str(range)+' kol: '+str(selectedColumn)] = discretized
+            print "zdyskretyzowana kolumna"
+            print(discretized.values)
         except:
             pass
 
@@ -104,8 +117,7 @@ class columnOperations(QtGui.QWidget):
                 list.append(j)
 
         self.df['num. ' + heading] = list
-        self.x += 1
-
+        return list
 
     def getDataFrame(self):
         return self.df
