@@ -58,6 +58,9 @@ class MyWindow(QtGui.QMainWindow):
         plotMenu.addAction(scatterPlot)
 
         euclid = QtGui.QAction('odleglosc Euklidesowa', self)
+        euclid.setShortcut('Ctrl+E')
+        euclid.triggered.connect(self.showDialogKnnEuclidean)
+
         manhattan = QtGui.QAction('metryka Manhattan', self)
         nieskonczonosc = QtGui.QAction('nieskonczonosc', self)
         Mahalanobis = QtGui.QAction('Mahalanobisa', self)
@@ -100,7 +103,7 @@ class MyWindow(QtGui.QMainWindow):
 
     def showDialogFile(self):
         fname = QtGui.QFileDialog.getOpenFileName(self, 'Open file', '/home',
-                                                  'Text files (*.txt);;CSV files (*.csv)')
+                                                  'CSV files (*.csv);;Text files (*.txt)')
         f = open(fname, 'r')
         with f:
             self.df = pd.read_csv(f, comment='#', header = 0, sep='\t')
@@ -115,20 +118,40 @@ class MyWindow(QtGui.QMainWindow):
             self.colOp.showDialogTextToNumber()
             self.df = self.colOp.getDataFrame()
             self.widget.setDataFrame(self.df)
+        else:
+            self.showAlertReadData()
 
     def showDialogDiscretize(self):
         if self.colOp is not None:
             self.colOp.showDialogColumnRange()
             self.df = self.colOp.getDataFrame()
             self.widget.setDataFrame(self.df)
+        else:
+            self.showAlertReadData()
 
     def showDialogNormalize(self):
         if self.colOp is not None:
             self.colOp.showDialogNormalize()
             self.df = self.colOp.getDataFrame()
             self.widget.setDataFrame(self.df)
+        else:
+            self.showAlertReadData()
 
     def showDialogScatterPlotPlot(self):
         if self.colOp is not None:
             self.colOp.showDialogScatterPlotPlot()
+        else:
+            self.showAlertReadData()
+
+    def showDialogKnnEuclidean(self):
+        if self.colOp is not None:
+            self.colOp.knn('euclidean')
+        else:
+            self.showAlertReadData()
+
+    def showAlertReadData(self):
+        msgBox = QMessageBox()
+        msgBox.setWindowTitle("Uwaga!")
+        msgBox.setText("Najpierw musisz wczytac dane \n(skrot Ctrl+O)")
+        msgBox.exec_()
 

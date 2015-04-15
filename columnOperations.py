@@ -3,7 +3,9 @@ __author__ = 'Milena'
 import sys
 from PyQt4 import QtGui
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
+from scipy.spatial.distance import euclidean, cityblock, chebyshev, mahalanobis
 
 class columnOperations(QtGui.QWidget):
 
@@ -68,9 +70,12 @@ class columnOperations(QtGui.QWidget):
             axisy, ok2 = QtGui.QInputDialog.getItem(self, "Os Y",
                 "Wybierz kolumne dla osi y", self.df.columns, 0, False)
             if axisy and ok2:
-                print "teraz wysuje wykres"
-                pd.options.display.mpl_style = 'default'
-                self.df.plot(kind='scatter', x=str(axisx), y=str(axisy), c=self.textToNumber('Hrabstwo'), s=100);
+                decClass, ok = QtGui.QInputDialog.getItem(self, "Klasa decyzyjna",
+                        "Wybierz klase decyzyjna", self.df.columns, 0, False)
+                if decClass and ok:
+                    pd.options.display.mpl_style = 'default'
+                    ttn = self.textToNumber(decClass)
+                    self.df.plot(kind='scatter', x=str(axisx), y=str(axisy), c=ttn, s=40);
 
     def discretize(self, selectedColumn, range):
         l = []
@@ -118,6 +123,41 @@ class columnOperations(QtGui.QWidget):
 
         self.df['num. ' + heading] = list
         return list
+
+    def knn(self, metric):
+        print "knn"
+        print metric
+        dfTmp = self.df
+        attributes = dfTmp.index[:-1] #bez atrybutu decyzyjnego - ostatniej kolumny
+        dfDistances = pd.DataFrame(index=attributes, columns=attributes) #DataFrame do przechowywania odleglosci
+        distCount = None                                                    #miedzy wszystkimi obiektami
+        if metric == 'manhattan':
+            distCount = lambda x, y: cityblock(x, y)
+        elif metric == 'nieskonczonosc':
+            distCount = lambda x, y: chebyshev(x, y)
+        elif metric == 'mahalanobis':
+            try:
+                cov = np.linalg.inv(dfTmp.ix[:, :-1].cov().as_matrix()) #macierz kowariancji
+                distancer = lambda x, y: mahalanobis(x, y, cov)
+            except:
+                return
+        else:
+            distCount = lambda x, y: euclidean(x, y)
+
+        #uzupelnienie macierzy odleglosci
+        for i in attributes:
+            for j in attributes:
+                if i == j:
+                    dfDistances.ix[i, j] = np.inf
+                elif not np.isnan(dfDistances.ix[j, i]):
+                    dfDistances.ix[i, j] = dfDistances.ix[j, i]
+                else:
+                    dfDistances.ix[i, j] = distCount(dfTmp.ix[i, :-1], dfTmp.ix[j, :-1])
+
+
+        for i in attributes:
+            for j in attributes:
+                pass
 
     def getDataFrame(self):
         return self.df
