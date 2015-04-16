@@ -1,3 +1,4 @@
+#Rozkład przychodów i aktywów netto w trzech hrabstwach
 Aktywa	Przych	Hrabstwo
 2.8	3.2	ROGERS
 3.4	6.4	DODGE

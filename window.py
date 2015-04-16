@@ -60,16 +60,19 @@ class MyWindow(QtGui.QMainWindow):
         euclid = QtGui.QAction('odleglosc Euklidesowa', self)
         euclid.setShortcut('Ctrl+E')
         euclid.triggered.connect(self.showDialogKnnEuclidean)
-
         manhattan = QtGui.QAction('metryka Manhattan', self)
+        manhattan.setShortcut('Ctrl+M')
+        manhattan.triggered.connect(self.showDialogKnnManhattan)
         nieskonczonosc = QtGui.QAction('nieskonczonosc', self)
-        Mahalanobis = QtGui.QAction('Mahalanobisa', self)
+        nieskonczonosc.triggered.connect(self.showDialogKnnInfinity)
+        mahalanobis = QtGui.QAction('Mahalanobisa', self)
+        mahalanobis.triggered.connect(self.showDialogKnnMahalanobis)
 
         knnMenu = menubar.addMenu('&Klasyfikacja metoda k-nn')
         knnMenu.addAction(euclid)
         knnMenu.addAction(manhattan)
         knnMenu.addAction(nieskonczonosc)
-        knnMenu.addAction(Mahalanobis)
+        knnMenu.addAction(mahalanobis)
 
 
 
@@ -148,6 +151,25 @@ class MyWindow(QtGui.QMainWindow):
             self.colOp.knn('euclidean')
         else:
             self.showAlertReadData()
+
+    def showDialogKnnManhattan(self):
+        if self.colOp is not None:
+            self.colOp.knn('manhattan')
+        else:
+            self.showAlertReadData()
+
+    def showDialogKnnInfinity(self):
+        if self.colOp is not None:
+            self.colOp.knn('infinity')
+        else:
+            self.showAlertReadData()
+
+    def showDialogKnnMahalanobis(self):
+        if self.colOp is not None:
+            self.colOp.knn('mahalanobis')
+        else:
+            self.showAlertReadData()
+
 
     def showAlertReadData(self):
         msgBox = QMessageBox()

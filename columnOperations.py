@@ -128,17 +128,18 @@ class columnOperations(QtGui.QWidget):
         print "knn"
         print metric
         dfTmp = self.df
-        attributes = dfTmp.index[:-1] #bez atrybutu decyzyjnego - ostatniej kolumny
+        # attributes = dfTmp.index[:-1] #do n-1
+        attributes = self.df.index[:-1]
         dfDistances = pd.DataFrame(index=attributes, columns=attributes) #DataFrame do przechowywania odleglosci
         distCount = None                                                    #miedzy wszystkimi obiektami
         if metric == 'manhattan':
             distCount = lambda x, y: cityblock(x, y)
-        elif metric == 'nieskonczonosc':
+        elif metric == 'infinity':
             distCount = lambda x, y: chebyshev(x, y)
         elif metric == 'mahalanobis':
             try:
                 cov = np.linalg.inv(dfTmp.ix[:, :-1].cov().as_matrix()) #macierz kowariancji
-                distancer = lambda x, y: mahalanobis(x, y, cov)
+                distCount = lambda x, y: mahalanobis(x, y, cov)
             except:
                 return
         else:
@@ -154,10 +155,49 @@ class columnOperations(QtGui.QWidget):
                 else:
                     dfDistances.ix[i, j] = distCount(dfTmp.ix[i, :-1], dfTmp.ix[j, :-1])
 
+        # print dfDistances
 
+        # print("\n narest neighbours :")
+
+        decisionAttributes = dfTmp.ix[:, -1] #atrybut decyzyjny - ostatnia kolumna
+        # print "decision attr"
+        # print(decisionAttributes)
+
+        x=0
+        result = pd.Series(0, index=range(1, len(attributes)))
         for i in attributes:
-            for j in attributes:
-                pass
+            sortedDist = dfDistances.ix[:,i].order()
+            for j in range(1, len(attributes)):
+                nNearestNeighbours = sortedDist.head(j).reset_index().ix[:, 0] #--head(n) return first n rows
+                mostpopular = nNearestNeighbours.apply(lambda z: decisionAttributes[z]).value_counts().idxmax() #find the most frequent value in a column,
+                if mostpopular == decisionAttributes[i]:											#choose the earlier element when breaking ties
+                    # print "mostpopular: "
+                    # print mostpopular
+                    # print "decAttr: "
+                    # print decisionAttributes[i]
+                    result[j] += 1
+                x+=1
+                # print "RESULT: "
+                # print result
+
+                # print "j: "+ str(j)
+                # maxCountDecAttr = nNearestNeighbours. #najliczniejsza klasa decyzyjny wsrod najblizszych sasiadow
+                # print nNearestNeighbours
+
+            # print "najblizsi sasiedzi: "
+            # print nNearestNeighbours
+        count = len(attributes)
+        print count
+        r2 = (result/count)*100
+        # result = result.apply(lambda x: (x / count ) * 100)
+        pd.options.display.mpl_style = 'default'
+        r2.plot()
+        print "RESULT22222222222222222222222: "
+        print result
+        # print len(attributes)
+        # print attributes
+        print "prtla wykonala sie: "
+        print x
 
     def getDataFrame(self):
         return self.df
