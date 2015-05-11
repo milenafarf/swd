@@ -6,6 +6,7 @@ from PyQt4.QtGui import *
 import pandas as pd
 from pandas.sandbox.qtpandas import DataFrameModel, DataFrameWidget
 from columnOperations import *
+from kMeansGrouping import *
 
 class MyWindow(QtGui.QMainWindow):
 
@@ -15,13 +16,15 @@ class MyWindow(QtGui.QMainWindow):
         self.initUI()
 
     def initUI(self):
+        self.df = None
         self.colOp = None
+        self.kMeans = None
 
         # T E M P O R A R Y READ FROM FILE
-        # self.df =  pd.read_csv("INCOME.csv", comment='#', header=0, sep='\t')
-        # self.widget = DataFrameWidget(self.df)
-        # self.setCentralWidget(self.widget)
-        # self.colOp = columnOperations(self.df)
+        self.df =  pd.read_csv("INCOME.csv", comment='#', header=0, sep='\t')
+        self.widget = DataFrameWidget(self.df)
+        self.setCentralWidget(self.widget)
+        self.colOp = columnOperations(self.df)
         # T E M P O R A R Y READ FROM FILE
 
         openFile = QtGui.QAction(QtGui.QIcon('open.png'), 'Wczytaj dane', self)
@@ -73,6 +76,12 @@ class MyWindow(QtGui.QMainWindow):
         knnMenu.addAction(manhattan)
         knnMenu.addAction(nieskonczonosc)
         knnMenu.addAction(mahalanobis)
+
+        knn = QtGui.QAction('Grupowanie', self)
+        knn.triggered.connect(self.showDialogKMeansGrouping)
+
+        knnMenu = menubar.addMenu('&Grupowanie k-nn')
+        knnMenu.addAction(knn)
 
 
 
@@ -169,6 +178,29 @@ class MyWindow(QtGui.QMainWindow):
             self.colOp.knn('mahalanobis')
         else:
             self.showAlertReadData()
+
+    def showDialogKMeansGrouping(self):
+        if self.df is not None:
+            self.showDialogSelectK()
+        else:
+            self.showAlertReadData()
+
+    def showDialogSelectK(self):
+        kk, ok = QtGui.QInputDialog.getInt(self, "Wpisz k",
+                "Wpisz liczbe klastrow k")
+
+        if kk and ok:
+            if kk > 0:
+                self.showDialogSelectMetric(kk)
+
+    def showDialogSelectMetric(self, kk):
+        item, ok = QtGui.QInputDialog.getItem(self, "Metryki",
+                "Wybierz metryke", ('euklidesowa','inna nie dzialajaca'), 0, False)
+
+        if item and ok:
+            selectedMetric = item
+            print "wybrana metryka " + selectedMetric
+            self.kMeans = kMeansGrouping(self.df, kk, selectedMetric)
 
 
     def showAlertReadData(self):

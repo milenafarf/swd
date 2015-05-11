@@ -5,6 +5,9 @@ from PyQt4 import QtGui
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
+from PyQt4 import QtCore, QtGui
+from PyQt4.QtGui import *
 from scipy.spatial.distance import euclidean, cityblock, chebyshev, mahalanobis
 
 class columnOperations(QtGui.QWidget):
@@ -129,7 +132,7 @@ class columnOperations(QtGui.QWidget):
         print metric
         dfTmp = self.df
         # attributes = dfTmp.index[:-1] #do n-1
-        attributes = self.df.index[:-1]
+        attributes = self.df.index[:]
         dfDistances = pd.DataFrame(index=attributes, columns=attributes) #DataFrame do przechowywania odleglosci
         distCount = None                                                    #miedzy wszystkimi obiektami
         if metric == 'manhattan':
@@ -140,7 +143,9 @@ class columnOperations(QtGui.QWidget):
             try:
                 cov = np.linalg.inv(dfTmp.ix[:, :-1].cov().as_matrix()) #macierz kowariancji
                 distCount = lambda x, y: mahalanobis(x, y, cov)
+
             except:
+                print "sie nie da obliczyc!!!!!!!!"
                 return
         else:
             distCount = lambda x, y: euclidean(x, y)
@@ -148,7 +153,7 @@ class columnOperations(QtGui.QWidget):
         #uzupelnienie macierzy odleglosci
         for i in attributes:
             for j in attributes:
-                if i == j:
+                if i == j: # przekatna macierzy
                     dfDistances.ix[i, j] = np.inf
                 elif not np.isnan(dfDistances.ix[j, i]):
                     dfDistances.ix[i, j] = dfDistances.ix[j, i]
@@ -157,11 +162,11 @@ class columnOperations(QtGui.QWidget):
 
         # print dfDistances
 
-        # print("\n narest neighbours :")
+        # print("\n nearest neighbours :")
 
         decisionAttributes = dfTmp.ix[:, -1] #atrybut decyzyjny - ostatnia kolumna
-        # print "decision attr"
-        # print(decisionAttributes)
+        print "decision attr"
+        print(decisionAttributes)
 
         x=0
         result = pd.Series(0, index=range(1, len(attributes)))
@@ -191,6 +196,7 @@ class columnOperations(QtGui.QWidget):
         r2 = (result/count)*100
         # result = result.apply(lambda x: (x / count ) * 100)
         pd.options.display.mpl_style = 'default'
+
         r2.plot()
         print "RESULT22222222222222222222222: "
         print result
@@ -201,5 +207,8 @@ class columnOperations(QtGui.QWidget):
 
     def getDataFrame(self):
         return self.df
+
+    def myEuclidean(self,x,y):
+        return np.sqrt(sum((x - y) ** 2))
 
 
