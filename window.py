@@ -77,10 +77,10 @@ class MyWindow(QtGui.QMainWindow):
         knnMenu.addAction(nieskonczonosc)
         knnMenu.addAction(mahalanobis)
 
-        knn = QtGui.QAction('Grupowanie', self)
+        knn = QtGui.QAction('Grupowanie metryka euklides', self)
         knn.triggered.connect(self.showDialogKMeansGrouping)
 
-        knnMenu = menubar.addMenu('&Grupowanie k-nn')
+        knnMenu = menubar.addMenu('&Grupowanie wpisz k')
         knnMenu.addAction(knn)
 
 
@@ -191,16 +191,20 @@ class MyWindow(QtGui.QMainWindow):
 
         if kk and ok:
             if kk > 0:
-                self.showDialogSelectMetric(kk)
+                self.showDialogSelectMaxIter(kk)
 
-    def showDialogSelectMetric(self, kk):
-        item, ok = QtGui.QInputDialog.getItem(self, "Metryki",
-                "Wybierz metryke", ('euklidesowa','inna nie dzialajaca'), 0, False)
+    def showDialogSelectMaxIter(self, kk):
+        item, ok = QtGui.QInputDialog.getInt(self, "Max iteracji",
+                "Mozesz podac, ile iteracji algorytm ma sie wykonywac\n Algorytm zakonczy sie wczesniej,jesli centroidy nie beda sie zmieniac")
 
         if item and ok:
-            selectedMetric = item
-            print "wybrana metryka " + selectedMetric
-            self.kMeans = kMeansGrouping(self.df, kk, selectedMetric)
+            maxIter = item
+            print "wybrana max iteracji " + str(maxIter)
+            metric="euclidean"
+            self.kMeans = kMeansGrouping(self.df, kk, metric, maxIter)
+            self.df = self.kMeans.getDataFrame()
+            self.widget.setDataFrame(self.df)
+            # self.df['clusters']=self.kMeans.getLabelsNumeric()
 
 
     def showAlertReadData(self):

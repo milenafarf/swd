@@ -9,20 +9,24 @@ import matplotlib
 import random
 from PyQt4 import QtCore, QtGui
 from PyQt4.QtGui import *
+from scipy.spatial.distance import euclidean, cityblock, chebyshev, mahalanobis
 
 class kMeansGrouping(QtGui.QWidget):
 
-    def __init__(self, dataFrame, _k, _metric):
+    def __init__(self, dataFrame, _k, _metric, _maxIter=100):
         super(kMeansGrouping, self).__init__()
 
         self.df2 = dataFrame
         # df3.drop(labels=df3.columns[-1], axis=1)
-        self.df = dataFrame.drop(labels=dataFrame.columns[-1], axis=1) #dane bez ostatniej kolumny-atrybutu decyzyjnego
+        # self.df = dataFrame.drop(labels=dataFrame.columns[-1], axis=1) #dane bez ostatniej kolumny-atrybutu decyzyjnego
+        self.df = pd.DataFrame.copy(dataFrame.drop(labels=dataFrame.columns[-1], axis=1))
         self.k = _k
         self.metric = _metric
-        self.MAX_ITERATIONS = 100;
-
+        self.MAX_ITERATIONS = _maxIter
         self.kMeans()
+
+    def getDataFrame(self):
+        return self.df2
 
     def kMeans(self):
         #first centroids found randomly from data points
@@ -45,34 +49,41 @@ class kMeansGrouping(QtGui.QWidget):
         print "\ncentroids3: "
         print centroids3
         print "\n\n"
-
+        print "k: " +str(self.k)
         # distance_array = np.sum((centroids.values - self.df.values)**2, axis=1)
         # print "\ndistance_array\n"
         # print distance_array
 
-        odlCentroids=None
+        oldCentroids=[]
         iterations=0
-        # while not self.stopCondition(flag, iterations):
-        changed = True
-        # while not changed or iterations < self.MAX_ITERATIONS:
-            # odlCentroids=centroids
-            # iterations+=1
+        labels=None
+        while not self.stopCondition(oldCentroids, centroids3, iterations):
+            oldCentroids=centroids3
+            iterations+=1
+            # print "iteracja: "+str(iterations)
+            labels, centroids = self.tmpAssignPoints(centroids3)
+            centroids3, labels_numeric = self.recalculateCentroids(centroids,labels)
 
-        # centroids, changed = self.assignPoints(centroids)
-        #labels are assigned centroids for each points, centroids are only k points
-        labels, centroids = self.tmpAssignPoints(centroids3)
-
-        centroids = self.recalculateCentroids(centroids,labels)
-            # centroids = self.recalculateCentroids(c)
+        self.df2['clusters']=labels_numeric
+        print "type(labels_numeric)"
+        print type(labels_numeric)
+        return labels_numeric
 
     def tmpAssignPoints(self, centroids):
+        distCount = lambda a, b: euclidean(a, b)
+
+        # chebyshev = nieskonczonosc
+        # distCount = lambda x, y: chebyshev(x, y)
+
+        #cityblock = l1
+        # distCount = lambda x, y: cityblock(x, y)
         labels_centroids=[]
         for i in self.df.index:
             disctances=[]
             c_dist = []
             for c in centroids:
                 # print "i: "+str(self.df.loc[i].values)+ " c: "+str(c)
-                x= self.myEuclidean(self.df.loc[i].values, c)
+                x= distCount(self.df.loc[i].values, c)
                 # print "xx: "+str(x)
                 #klucz-x, wartosc-c
                 disctances.append(x)
@@ -128,9 +139,9 @@ class kMeansGrouping(QtGui.QWidget):
         return (assignedCentroids, changed)
 
     def recalculateCentroids(self, centroids, labels):
-        print "w recalculate, centroids: "
-        print centroids
-        print "\n"
+        # print "w recalculate, centroids: "
+        # print centroids
+        # print "\n"
         i=0
         #slownik, gdzie kazdemu centroidoi przypisana jest liczba identyfikujaca go
         tmp={}
@@ -140,27 +151,31 @@ class kMeansGrouping(QtGui.QWidget):
         # print "\ntmp: "
         # print tmp
 
-        tmpDf=self.df
+        tmpDf=pd.DataFrame.copy(self.df)
         i=0
         for l in labels:
             tmpDf.ix[i,'labels']=tmp[tuple(l)]
             i+=1
 
         myMean = tmpDf.groupby('labels').mean()
-        print "myMean"
-        print myMean
+        labels_numeric=tmpDf['labels']
+        # print "myMean"
+        # print myMean
         newCentroids=myMean.values
         # print "labels:"
         # print labels
 
-        print "mymean values"
-        print myMean.values
-        print"\n\n"
+        # print "mymean values"
+        # print myMean.values
+        # print"\n\n"
 
-        print "\n\ntmpDf"
-        print tmpDf
-
-        return newCentroids
+        # print "\n\ntmpDf"
+        # print tmpDf
+        # print "\n\n"
+        # print "po recalculate centroids self.df:"
+        # print self.df
+        # print "\n\n"
+        return (newCentroids,labels_numeric)
 
 
 
@@ -169,14 +184,35 @@ class kMeansGrouping(QtGui.QWidget):
     # algorithm terminates when there is no change in assigning points to clusters, none of the points chenged its cluster
     # so changed is False
     # or when the condition of max iterations is met
-    def stopCondition(self, changed, iterations):
+    def stopCondition(self, oldCentroids, centroids, iterations):
+        # print "w stop condition"
+        # print "old centroids:"
+        # print oldCentroids
+        # print "centroids"
+        # print centroids
+        # print "\n"
         if iterations > self.MAX_ITERATIONS:
             return True
-        return not changed
+        if oldCentroids is not None:
+            # return oldCentroids == centroids
+            return False
+        else: return False
 
 
     def myEuclidean(self,x,y):
         return np.sqrt(sum((x - y) ** 2))
+
+    #takes two series as arguments and return Jaccard index - similarity measure
+    def jaccardIndex(self,x,y):
+        intersection = pd.Series(np.intersect1d(x, y))
+        card_intercsect = len(intersection)
+        union = pd.Series(np.union1d(x, y))
+        card_union = len(union)
+        return card_intercsect/card_union
+
+
+    def determineK(self):
+        x=1
 
     #wyswietla dialog do wpisania k i wywoluje okno do wybrania metryki
     def showDialogSelectK(self):
