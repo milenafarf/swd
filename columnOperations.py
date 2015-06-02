@@ -12,10 +12,11 @@ from scipy.spatial.distance import euclidean, cityblock, chebyshev, mahalanobis
 
 class columnOperations(QtGui.QWidget):
 
-    def __init__(self, dataFrame):
+    def __init__(self, dataFrame, _attributesNum):
         super(columnOperations, self).__init__()
 
         self.df = dataFrame
+        self.attributesNum = _attributesNum
         # self.initUI()
 
     def initUI(self):
@@ -141,7 +142,7 @@ class columnOperations(QtGui.QWidget):
             distCount = lambda x, y: chebyshev(x, y)
         elif metric == 'mahalanobis':
             try:
-                cov = np.linalg.inv(dfTmp.ix[:, :-1].cov().as_matrix()) #macierz kowariancji
+                cov = np.linalg.inv(dfTmp.ix[:, :self.attributesNum].cov().as_matrix()) #macierz kowariancji
                 distCount = lambda x, y: mahalanobis(x, y, cov)
 
             except:
@@ -158,13 +159,13 @@ class columnOperations(QtGui.QWidget):
                 elif not np.isnan(dfDistances.ix[j, i]):
                     dfDistances.ix[i, j] = dfDistances.ix[j, i]
                 else:
-                    dfDistances.ix[i, j] = distCount(dfTmp.ix[i, :-1], dfTmp.ix[j, :-1])
+                    dfDistances.ix[i, j] = distCount(dfTmp.ix[i, :self.attributesNum], dfTmp.ix[j, :self.attributesNum])
 
         # print dfDistances
 
         # print("\n nearest neighbours :")
 
-        decisionAttributes = dfTmp.ix[:, -1] #atrybut decyzyjny - ostatnia kolumna
+        decisionAttributes = dfTmp.ix[:, self.attributesNum] #atrybut decyzyjny - ostatnia kolumna
         print "decision attr"
         print(decisionAttributes)
 
